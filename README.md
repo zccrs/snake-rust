@@ -1,2 +1,2 @@
-# snake_rust
+# snake-rust
 A TUI game of rust-lang
