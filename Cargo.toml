@@ -1,9 +1,13 @@
 [package]
 name = "snake-rust"
 version = "0.1.0"
-authors = ["zccrs"]
+authors = ["zccrs zccrs@live.com"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
+[target.'cfg(windows)'.dependencies]
+ncursesw-win = "0.4.0"
+
+[target.'cfg(unix)'.dependencies]
+ncursesw = "0.5"
