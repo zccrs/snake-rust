@@ -11,3 +11,4 @@ ncursesw-win = "0.4.0"
 
 [target.'cfg(unix)'.dependencies]
 ncursesw = "0.5"
+ascii = "1.0"
