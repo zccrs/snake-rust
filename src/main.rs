@@ -4,6 +4,19 @@ use ncursesw::*;
 use ncursesw::normal::*;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+struct GameData {
+    length: i16, //n用来记录蛇身长度,初始为4节
+    velocity: i16,//用来给记录蛇的移动速度
+    t1: i32, //用来记录用时
+    t2: i32, //用来记录用时
+    t3: i32, //用来记录用时
+    level: i8,//用来记录关卡
+    HP: i8, //记录蛇的生命值,初始化为6
+    food: i16, //用来记录所吃到的食物数
+    food_x: i16, //记录食物所在地
+    food_y: i16 //记录食物所在地
+}
+
 fn moveCursor(x: i32, y: i32) {
     r#move(Origin { y: x, x: y }).unwrap();
 }
