@@ -5,6 +5,9 @@ use ncursesw::normal::*;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::time::Duration;
 use std::thread;
+use std::os::raw::c_int;
+use std::os::raw::c_char;
+use std::ffi::CString;
 
 struct GameData {
     length: i16, //n用来记录蛇身长度,初始为4节
@@ -45,8 +48,12 @@ fn set_color(color: ColorPair) {
 }
 
 fn addstr(str: &str) {
-    // 添加宽字符居然会不显示，醉了
-    addwstr(&WideString::from_str(str)).unwrap();
+    ncursesw::addstr(str).unwrap();
+}
+
+#[link(name = "c")]
+extern "C" {
+    fn setlocale(t: c_int, v: *const c_char);
 }
 
 fn timestamp() -> i64 {
@@ -59,6 +66,10 @@ fn timestamp() -> i64 {
 }
 
 fn main() {
+    unsafe {
+        // 避免使用addstr时中文乱码
+        setlocale(0, CString::new("").unwrap().as_ptr());
+    }
     initscr().unwrap();
 
     if !has_colors() {
