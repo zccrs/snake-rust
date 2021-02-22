@@ -670,7 +670,7 @@ fn begin_game(data: &mut GameData) -> bool
         move_cursor(data.snake_infos[0].x.into(), data.snake_infos[0].y.into()); //转到蛇头位置
         set_color(data.colors.red);//改成红色
         addstr("◆"); //打印蛇头
-        for i in 1..data.length-1 {
+        for i in 1..data.length - 1 {
             move_cursor(data.snake_infos[i as usize].x.into(), data.snake_infos[i as usize].y.into()); //转到当前蛇身位置
             set_color(data.colors.yellow);//改成黄色
             addstr("●"); //打印蛇身
@@ -680,9 +680,9 @@ fn begin_game(data: &mut GameData) -> bool
         addstr("●"); //打印蛇尾
         thread::sleep(Duration::from_millis(data.velocity as u64));//控制蛇的移动速度
         data.t1 = timestamp() - data.t2; //刷新游戏运行时间
-        move_cursor(data.snake_infos[data.length as usize - 2].x.into(), data.snake_infos[data.length as usize - 2].y.into()); //移到蛇尾所在地
+        move_cursor(data.snake_infos[data.length as usize - 1].x.into(), data.snake_infos[data.length as usize - 1].y.into()); //移到蛇尾所在地
         addstr(" "); //清除上个循环的蛇尾
-        for i in (data.length as usize - 1..0).rev() {
+        for i in (1..data.length as usize).rev() {
             data.snake_infos[i] = data.snake_infos[i - 1];    //移动蛇
         }
         handle_key_event(data);//用户是否操作键盘
