@@ -361,6 +361,7 @@ fn select_level(data: &mut GameData)//用来选择关卡并根据关卡设置蛇
             move_cursor(15, 5);
             set_color(data.colors.yellow);//变成黄色
             addstr("请输入你想要的蛇的生命值：");
+            refresh().unwrap();
             data.hp = getchar() as i8 - 48;
             move_cursor(15, 3);
             addstr("                      ");
@@ -545,7 +546,7 @@ fn update_ui(data: &mut GameData)//用来随机产生障碍物以及食物和生
         data.map[data.food_x as usize][data.food_y as usize] = ItemType::Food; //随机出现食物
         move_cursor((2 * (data.food_x + 1)).into(), (data.food_y + 1).into()); //定位到食物出现的位置
         set_color(data.colors.yellow);//调成黄色
-        addstr("☆"); //打印出食物
+        addstr("●"); //打印出食物
     }
     if data.t1 / 20 > 0 && data.t1 % 12 == 0 && data.t1 > data.t3
         && data.map[(data.snake_infos[0].x as usize - 1) / 2][data.snake_infos[0].y as usize - 1] == ItemType::None {
@@ -558,7 +559,7 @@ fn update_ui(data: &mut GameData)//用来随机产生障碍物以及食物和生
         }
         move_cursor(2 * (e as i32 + 1), f as i32 + 1); //定位到障碍物出现的位置
         data.map[e][f] = ItemType::Barrier; //随机出现障碍物
-        set_color(data.colors.yellow);//调成黄色
+        set_color(data.colors.red);//调成红色
         addstr("*"); //打印出障碍物
         data.t3 = data.t1; //以免产生多个障碍物
         if data.hp < 7 {
@@ -578,7 +579,7 @@ fn update_ui(data: &mut GameData)//用来随机产生障碍物以及食物和生
         }
         data.map[a][b] = ItemType::Star; //随机出现小星星（吃到星星长度减1）
         move_cursor(2 * (a as i32 + 1), b as i32 + 1); //定位到星星出现的位置（吃到星星长度减1）
-        set_color(data.colors.yellow);//调成黄色
+        set_color(data.colors.green);//调成绿色
         addstr("☆"); //打印出星星（吃到星星长度减1）
         data.t3 = data.t1; //以免产生多个障碍物
         if data.hp < 7 {
@@ -604,32 +605,51 @@ fn update_ui(data: &mut GameData)//用来随机产生障碍物以及食物和生
     refresh().unwrap();
 }
 
-fn handle_key_event(data: &mut GameData)//用户是否操作键盘
+fn get_key() -> Result<KeyBinding, ()>
 {
-    halfdelay(Duration::from_secs(10)).expect("halfdelay failed!");
-    let key = match getch() {
+    match getch() {
         Ok(result) => {
             match result {
                 CharacterResult::Key(key) => {
-                    key
+                    return Ok(key)
                 },
-                _ => {
-                    return;
+                CharacterResult::Character(ch) => {
+                    if ch == '\n' {
+                        return Ok(KeyBinding::Enter)
+                    } else if ch == '\u{001B}' { // Esc key
+                        return Ok(KeyBinding::Exit)
+                    } else {
+                        return Err(())
+                    }
                 }
             }
         },
+        Err(_) => return Err(())
+    };
+}
+
+fn handle_key_event(data: &mut GameData)//用户是否操作键盘
+{
+    halfdelay(Duration::from_secs(10)).expect("halfdelay failed!");
+    let key = match get_key() {
+        Ok(result) => {
+            result
+        },
         Err(_) => return
     };
-    let direction: Direction = match Direction::try_from(&key) {
-        Ok(direction) => direction,
-        Err(_) => return
+    match Direction::try_from(&key) {
+        Ok(direction) => {
+            if (direction.to_int() + data.snake_infos[0].direction.to_int() != Direction::Up.to_int() + Direction::Down.to_int())
+                && (direction.to_int() + data.snake_infos[0].direction.to_int() != Direction::Left.to_int() + Direction::Right.to_int())
+                && direction != data.snake_infos[0].direction { //判断按键是否是方向键，并且是不是蛇移动方向的反方向
+                data.snake_infos[0].direction = direction;    //如果不是就改变蛇头方向
+            }
+            return;
+        },
+        Err(_) => {}
     };
 
-    if (direction.to_int() + data.snake_infos[0].direction.to_int() != Direction::Up.to_int() + Direction::Down.to_int())
-        && (direction.to_int() + data.snake_infos[0].direction.to_int() != Direction::Left.to_int() + Direction::Right.to_int())
-        && direction != data.snake_infos[0].direction { //判断按键是否是方向键，并且是不是蛇移动方向的反方向
-        data.snake_infos[0].direction = direction;    //如果不是就改变蛇头方向
-    } else if key == KeyBinding::Enter { //判断用户是否暂停
+    if key == KeyBinding::Enter { //判断用户是否暂停
         let a: i64;
         let b: i64;
         a = timestamp(); //记录当前程序已用时间
@@ -637,26 +657,23 @@ fn handle_key_event(data: &mut GameData)//用户是否操作键盘
         set_color(data.colors.white);//调成白色
         addstr("已暂停,按确定键开始");
         loop {
-            match getch().unwrap() {
-                CharacterResult::Key(key) => {
+            match get_key() {
+                Ok(key) => {
                     if key == KeyBinding::Enter {////判断是否按键且是否解除暂停
                         move_cursor(20, 1);
                         addstr("                     "); //清除"已暂停,按确定键开始"这行字
                         break;
                     }
                 },
-                _ => {
-                    continue;
-                }
+                Err(_) => continue
             }
         }
         b = timestamp(); //记录当前程序已用时间
         data.t2 += b - a; //将暂停加到t2上供t1减去
-    } else if key == KeyBinding::Erase { //判断是否重新选关
+    } else if key == KeyBinding::Exit { //判断是否重新选关
         select_level(data);//用来选择关卡并根据关卡设置蛇的移动速度
         begin_game(data);//开始游戏
     }
-    halfdelay(Duration::from_secs(0)).unwrap();
 }
 fn begin_game(data: &mut GameData) -> bool
 {
